@@ -46,6 +46,19 @@ is in this repo or baked into the image. To rotate one:
 fly secrets set GH_TOKEN=github_pat_... -a alversjo-admin-box
 ```
 
+## Troubleshooting
+
+**`tunnel unavailable: Error contacting Fly.io API when probing "alversjo"`** on
+`fly ssh console`: the local flyctl agent's WireGuard tunnel runs over UDP by
+default, and on WSL2 the NAT mapping expires after ~15 minutes idle, so the
+tunnel silently goes dark (a fresh agent works, then fails again). Durable fix,
+once per machine:
+
+```bash
+fly wireguard websockets enable   # carry WireGuard over TCP/443 instead of UDP
+fly agent stop                    # agent restarts on next command
+```
+
 ## First-time bootstrap (already done, recorded for posterity)
 
 ```bash
