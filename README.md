@@ -49,15 +49,15 @@ fly secrets set GH_TOKEN=github_pat_... -a alversjo-admin-box
 ## Troubleshooting
 
 **`tunnel unavailable: Error contacting Fly.io API when probing "alversjo"`** on
-`fly ssh console`: the local flyctl agent's WireGuard tunnel runs over UDP by
-default, and on WSL2 the NAT mapping expires after ~15 minutes idle, so the
-tunnel silently goes dark (a fresh agent works, then fails again). Durable fix,
-once per machine:
-
-```bash
-fly wireguard websockets enable   # carry WireGuard over TCP/443 instead of UDP
-fly agent stop                    # agent restarts on next command
-```
+`fly ssh console`: known flyctl limitation, not specific to this app or machine
+(flyctl issue [#3306](https://github.com/superfly/flyctl/issues/3306), open
+since 2024). Fly's gateways deliberately evict idle WireGuard peers
+(["JIT WireGuard"](https://fly.io/blog/jit-wireguard-peers/)); after ~25 min of
+not using `fly`, the local agent's tunnel is dead, and the first command's
+5-second probe can expire before the agent notices and reconnects. It
+self-heals: **wait ~30–60 s and retry.** If it stays stuck, `fly wireguard
+reset` discards the peer (the agent transparently makes a new one), and
+`fly wireguard websockets enable` helps on networks with flaky UDP.
 
 ## First-time bootstrap (already done, recorded for posterity)
 
