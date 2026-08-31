@@ -1,0 +1,19 @@
+# Alversjö admin box — always-on machine with pre-authed fly, gh, and Claude CLIs.
+# No services and no public ports on purpose: the only way in is
+# `fly ssh console -a alversjo-admin-box`, gated by Fly org membership.
+
+app = "alversjo-admin-box"
+primary_region = "arn"
+
+[build]
+
+[[mounts]]
+  source = "work_data"
+  destination = "/work"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "2gb"
+
+[[restart]]
+  policy = "always"
