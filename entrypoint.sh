@@ -20,6 +20,17 @@ if [[ -n "${GH_TOKEN:-}" ]]; then
   gh auth setup-git || log "WARNING: gh auth setup-git failed; git push over HTTPS won't work"
 fi
 
+# Interactive `claude` gates its first-run login wizard on this flag, not on
+# whether CLAUDE_CODE_OAUTH_TOKEN is set; seed it so SSH sessions get a REPL
+# straight away. /root is rebuilt from the image on every deploy, hence here.
+if [[ ! -f /root/.claude.json ]]; then
+  echo '{"hasCompletedOnboarding": true}' > /root/.claude.json
+fi
+mkdir -p /root/.claude
+if [[ ! -f /root/.claude/settings.json ]]; then
+  echo '{"theme": "dark"}' > /root/.claude/settings.json
+fi
+
 # /work is a Fly volume: the clone survives deploys, so only clone when absent.
 mkdir -p /work
 if [[ ! -d /work/admin-box/.git ]]; then
