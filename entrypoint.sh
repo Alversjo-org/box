@@ -42,15 +42,55 @@ if [[ ! -f /root/.claude/settings.json ]]; then
   echo '{"theme": "dark"}' > /root/.claude/settings.json
 fi
 
-# /work is a Fly volume: the clone survives deploys, so only clone when absent.
-mkdir -p /work
-if [[ ! -d /work/box/.git ]]; then
-  if git clone https://github.com/Alversjo-org/box.git /work/box; then
-    log "cloned Alversjo-org/box into /work/box"
-  else
-    log "WARNING: could not clone Alversjo-org/box"
+# /work is a Fly volume: clones survive restarts, so only clone when absent.
+# Repos are public, so cloning needs no token; pushing does (gh auth setup-git).
+for repo in box platform infrastructure; do
+  if [[ ! -d "/work/${repo}/.git" ]]; then
+    if git clone "https://github.com/Alversjo-org/${repo}.git" "/work/${repo}"; then
+      log "cloned Alversjo-org/${repo} into /work/${repo}"
+    else
+      log "WARNING: could not clone Alversjo-org/${repo}"
+    fi
   fi
+done
+
+# CloudCLI: browser UI the platform proxies to. Port 8080, no public service.
+# JWT mode with a single seeded user; the platform mints tokens with JWT_SECRET.
+export HOST="::"
+export SERVER_PORT=8080
+export DATABASE_PATH=/work/.cloudcli/auth.db
+export WORKSPACES_ROOT=/work
+export CLAUDE_CLI_PATH=/usr/local/bin/claude
+mkdir -p /work/.cloudcli
+if [[ -z "${JWT_SECRET:-}" ]]; then
+  log "WARNING: JWT_SECRET is not set — CloudCLI will generate its own and the platform cannot log in"
 fi
 
-log "box up — fallback shell: fly ssh console -a alversjo-boxes -s"
-exec sleep infinity
+seed_cloudcli_user() {
+  # Wait for the server, then register the single user if the DB is empty.
+  local status
+  for _ in $(seq 1 60); do
+    status=$(curl -fsS http://localhost:8080/api/auth/status 2>/dev/null || true)
+    [[ -n "$status" ]] && break
+    sleep 1
+  done
+  if [[ "$status" == *'"needsSetup":true'* ]]; then
+    local password
+    password=$(head -c 24 /dev/urandom | base64 | tr -d '\n=/+')
+    if curl -fsS -X POST -H 'content-type: application/json' \
+         -d "{\"username\":\"box\",\"password\":\"${password}\"}" \
+         http://localhost:8080/api/auth/register >/dev/null; then
+      log "seeded CloudCLI user 'box'"
+    else
+      log "WARNING: could not seed CloudCLI user"
+    fi
+  fi
+}
+
+log "box up (profile ${BOX_PROFILE}) — fallback shell: fly ssh console -a alversjo-boxes -s"
+while true; do
+  seed_cloudcli_user &
+  cloudcli start --port 8080 --database-path /work/.cloudcli/auth.db
+  log "WARNING: cloudcli exited with $? — restarting in 5s"
+  sleep 5
+done
