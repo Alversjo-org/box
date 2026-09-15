@@ -50,6 +50,15 @@ behind auth first.
 - `/work/CLAUDE.md` is copied from `profiles/<BOX_PROFILE>/CLAUDE.md` on every boot.
 - CloudCLI runs on port 8080 with its database at `/work/.cloudcli/auth.db`.
   The platform proxies to it; there is no public port.
+- On first boot, once CloudCLI finishes setup, the entrypoint registers
+  `/work` as a CloudCLI project (`POST /api/projects/create-project`), so
+  opening a box shows a ready project instead of "No projects found".
+  Projects live in CloudCLI's own SQLite DB on the volume, so this is
+  idempotent and only does real work on a fresh volume.
+- Claude Code session data (`/root/.claude/projects`, `/root/.claude/todos`)
+  is symlinked to `/work/.claude/projects` and `/work/.claude/todos` on the
+  volume, so session state survives image updates even though `/root` is
+  rebuilt from the image on every one.
 - `fly ssh console -a alversjo-boxes -s` still works as a fallback for admins.
 
 ## Building
