@@ -64,7 +64,8 @@ RUN npm install -g "@cloudcli-ai/cloudcli@${CLOUDCLI_VERSION}" \
 RUN claude plugin marketplace add anthropics/claude-plugins-official \
  && claude plugin install superpowers@claude-plugins-official \
  && test -f /root/.claude/plugins/installed_plugins.json \
- && grep -q '"superpowers@claude-plugins-official"' /root/.claude/settings.json
+ && grep -q '"superpowers@claude-plugins-official"' /root/.claude/settings.json \
+ && rm -f /root/.claude.json
 
 ENV CLAUDE_CLI_PATH=/usr/local/bin/claude
 
