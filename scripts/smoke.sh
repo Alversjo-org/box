@@ -38,6 +38,22 @@ for _ in $(seq 1 90); do
         echo "$body"
         exit 1
       fi
+
+      # /work must be registered as a CloudCLI project on first boot so
+      # opening the box shows a ready workspace instead of "No projects found".
+      projects=""
+      for _ in $(seq 1 30); do
+        projects=$(curl -fsS -H "Authorization: Bearer $TOKEN" http://127.0.0.1:18080/api/projects 2>/dev/null || true)
+        [[ "$projects" == *'"/work"'* ]] && break
+        sleep 1
+      done
+      if [[ "$projects" == *'"/work"'* ]]; then
+        echo "smoke: project /work registered"
+      else
+        echo "smoke: FAILED — project /work not registered"
+        echo "$projects"
+        exit 1
+      fi
       exit 0
     fi
   fi
