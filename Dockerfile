@@ -8,6 +8,9 @@ ARG GH_SHA256=3b8ac6b30336802fc1a858d7c084e11cdf24ac1a761ca90b68022d7d729208de
 ARG NODE_VERSION=24.18.0
 ARG NODE_SHA256=55aa7153f9d88f28d765fcdad5ae6945b5c0f98a36881703817e4c450fa76742
 ARG CLAUDE_CODE_VERSION=2.1.251
+ARG CLOUDCLI_VERSION=1.37.3
+ARG DNSCONTROL_VERSION=4.44.1
+ARG DNSCONTROL_SHA256=cd8f50de158ba1a8b3b4dd52e388f009f235f2f38a3e53c22b39a4bee038c684
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ENV DEBIAN_FRONTEND=noninteractive
@@ -42,6 +45,28 @@ RUN curl -fsSL -o /tmp/node.tar.xz "https://nodejs.org/dist/v${NODE_VERSION}/nod
 # Claude Code CLI (pinned)
 RUN npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
  && claude --version
+
+# dnscontrol (pinned + checksum)
+RUN curl -fsSL -o /tmp/dnscontrol.tar.gz "https://github.com/StackExchange/dnscontrol/releases/download/v${DNSCONTROL_VERSION}/dnscontrol_${DNSCONTROL_VERSION}_linux_amd64.tar.gz" \
+ && echo "${DNSCONTROL_SHA256}  /tmp/dnscontrol.tar.gz" | sha256sum -c - \
+ && tar -xzf /tmp/dnscontrol.tar.gz -C /usr/local/bin dnscontrol \
+ && rm /tmp/dnscontrol.tar.gz \
+ && dnscontrol version
+
+# CloudCLI (pinned) — browser UI for Claude Code; the platform proxies to it
+RUN npm install -g "@cloudcli-ai/cloudcli@${CLOUDCLI_VERSION}" \
+ && cloudcli --version
+
+# Superpowers plugin for Claude Code. Both commands work without a login;
+# they only need git and network. Installed for root, whose HOME is the
+# runtime HOME, so the absolute installPath recorded in installed_plugins.json
+# stays valid.
+RUN claude plugin marketplace add anthropics/claude-plugins-official \
+ && claude plugin install superpowers@claude-plugins-official \
+ && test -f /root/.claude/plugins/installed_plugins.json \
+ && grep -q '"superpowers@claude-plugins-official"' /root/.claude/settings.json
+
+ENV CLAUDE_CLI_PATH=/usr/local/bin/claude
 
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
