@@ -54,6 +54,17 @@ for _ in $(seq 1 90); do
         echo "$projects"
         exit 1
       fi
+
+      # The seeded project must carry the "Alversjö" display name (the
+      # project-management service returns it as displayName, sourced from
+      # the customName we send in create-project), not just its raw path.
+      if [[ "$projects" == *'Alversjö'* ]]; then
+        echo "smoke: project name ok"
+      else
+        echo "smoke: FAILED — project name not set to Alversjö"
+        echo "$projects"
+        exit 1
+      fi
       exit 0
     fi
   fi

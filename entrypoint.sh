@@ -152,7 +152,7 @@ seed_cloudcli_project() {
         return
       fi
       if curl -fsS -X POST -H 'content-type: application/json' -H "Authorization: Bearer ${token}" \
-           -d '{"path":"/work","name":"Alversjö"}' \
+           -d '{"path":"/work","customName":"Alversjö"}' \
            http://localhost:8080/api/projects/create-project >/dev/null; then
         log "seeded CloudCLI project /work"
         return
