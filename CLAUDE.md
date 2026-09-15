@@ -26,6 +26,23 @@ machine env vars set by the platform at creation time:
 | `JWT_SECRET` | yes | yes | CloudCLI, minted per box by the platform |
 | `BOX_PROFILE` | `admin` | `contributor` | entrypoint profile selection |
 
+## Image tags
+
+CI pushes two tags to `registry.fly.io/alversjo-boxes` on every push to
+`main`: `<git-sha>` and `latest`. `latest` is mutable — Fly pins a machine to
+the image digest at creation time, so an existing machine never moves when
+`latest` is repointed. Pass `registry.fly.io/alversjo-boxes:<sha>` when
+creating a machine if you need a reproducible box.
+
+## Network
+
+CloudCLI binds `HOST="::"` (all interfaces) deliberately, so the image can be
+smoke-tested locally (`scripts/smoke.sh` publishes port 8080 to the host).
+Boxes stay private only because the `alversjo-boxes` Fly app's machine config
+has `services: []` — there is no public service on the app. Never add a
+`services` entry to `alversjo-boxes`; if one is ever needed, put CloudCLI
+behind auth first.
+
 ## Layout on a box
 
 - `/work` is the persistent volume. Repos are cloned there on first boot:
