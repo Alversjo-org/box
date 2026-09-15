@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Boot script for the Alversjö admin box. Must never crash-loop: the box has to
+# Boot script for the Alversjö box. Must never crash-loop: the box has to
 # stay reachable via `fly ssh console` even when a token is missing or GitHub
 # is unreachable, so every failure downgrades to a logged warning.
 set -u
@@ -46,7 +46,11 @@ fi
 # Repos are public, so cloning needs no token; pushing does (gh auth setup-git).
 for repo in box platform infrastructure; do
   if [[ ! -d "/work/${repo}/.git" ]]; then
-    if git clone "https://github.com/Alversjo-org/${repo}.git" "/work/${repo}"; then
+    if [[ -d "/work/${repo}" ]]; then
+      log "removing partial clone at /work/${repo}"
+      rm -rf "/work/${repo}"
+    fi
+    if timeout 300 git clone "https://github.com/Alversjo-org/${repo}.git" "/work/${repo}"; then
       log "cloned Alversjo-org/${repo} into /work/${repo}"
     else
       log "WARNING: could not clone Alversjo-org/${repo}"
@@ -75,22 +79,30 @@ seed_cloudcli_user() {
     sleep 1
   done
   if [[ "$status" == *'"needsSetup":true'* ]]; then
-    local password
+    local password attempt
     password=$(head -c 24 /dev/urandom | base64 | tr -d '\n=/+')
-    if curl -fsS -X POST -H 'content-type: application/json' \
-         -d "{\"username\":\"box\",\"password\":\"${password}\"}" \
-         http://localhost:8080/api/auth/register >/dev/null; then
-      log "seeded CloudCLI user 'box'"
-    else
-      log "WARNING: could not seed CloudCLI user"
-    fi
+    for attempt in 1 2 3; do
+      if curl -fsS -X POST -H 'content-type: application/json' \
+           -d "{\"username\":\"box\",\"password\":\"${password}\"}" \
+           http://localhost:8080/api/auth/register >/dev/null; then
+        log "seeded CloudCLI user 'box'"
+        return
+      fi
+      sleep 5
+    done
+    log "WARNING: could not seed CloudCLI user"
   fi
 }
 
 log "box up (profile ${BOX_PROFILE}) — fallback shell: fly ssh console -a alversjo-boxes -s"
+cloudcli_pid=0
+trap 'log "signal received — stopping cloudcli"; kill -TERM "$cloudcli_pid" 2>/dev/null; wait "$cloudcli_pid" 2>/dev/null; exit 0' TERM INT
 while true; do
   seed_cloudcli_user &
-  cloudcli start --port 8080 --database-path /work/.cloudcli/auth.db
-  log "WARNING: cloudcli exited with $? — restarting in 5s"
+  cloudcli start --port 8080 --database-path /work/.cloudcli/auth.db &
+  cloudcli_pid=$!
+  wait "$cloudcli_pid"
+  rc=$?
+  log "WARNING: cloudcli exited with $rc — restarting in 5s"
   sleep 5
 done

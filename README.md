@@ -1,9 +1,11 @@
 # box
 
 The Docker image behind every Alversjö box: a small Debian image with
-pre-authenticated `fly`, `gh`, `claude`, `dnscontrol` and a
-[CloudCLI](https://github.com/siteboon/claudecodeui) server, so people can
-work with Claude Code in the browser through the Alversjö platform.
+`fly`, `gh`, `claude`, `dnscontrol` and a
+[CloudCLI](https://github.com/siteboon/claudecodeui) server. Every CLI
+authenticates from env vars at runtime (set by the platform when it creates
+the box), so people can work with Claude Code in the browser through the
+Alversjö platform.
 
 Two profiles, chosen by `BOX_PROFILE`:
 

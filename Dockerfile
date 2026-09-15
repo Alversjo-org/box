@@ -44,7 +44,8 @@ RUN curl -fsSL -o /tmp/node.tar.xz "https://nodejs.org/dist/v${NODE_VERSION}/nod
 
 # Claude Code CLI (pinned)
 RUN npm install -g "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" \
- && claude --version
+ && claude --version \
+ && npm cache clean --force
 
 # dnscontrol (pinned + checksum)
 RUN curl -fsSL -o /tmp/dnscontrol.tar.gz "https://github.com/StackExchange/dnscontrol/releases/download/v${DNSCONTROL_VERSION}/dnscontrol_${DNSCONTROL_VERSION}_linux_amd64.tar.gz" \
@@ -55,7 +56,8 @@ RUN curl -fsSL -o /tmp/dnscontrol.tar.gz "https://github.com/StackExchange/dnsco
 
 # CloudCLI (pinned) — browser UI for Claude Code; the platform proxies to it
 RUN npm install -g "@cloudcli-ai/cloudcli@${CLOUDCLI_VERSION}" \
- && cloudcli --version
+ && cloudcli --version \
+ && npm cache clean --force
 
 # Superpowers plugin for Claude Code. Both commands work without a login;
 # they only need git and network. Installed for root, whose HOME is the
@@ -65,7 +67,8 @@ RUN claude plugin marketplace add anthropics/claude-plugins-official \
  && claude plugin install superpowers@claude-plugins-official \
  && test -f /root/.claude/plugins/installed_plugins.json \
  && grep -q '"superpowers@claude-plugins-official"' /root/.claude/settings.json \
- && rm -f /root/.claude.json
+ && rm -f /root/.claude.json \
+ && rm -rf /root/.local/state/gh /root/.claude/backups
 
 ENV CLAUDE_CLI_PATH=/usr/local/bin/claude
 
