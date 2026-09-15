@@ -69,6 +69,7 @@ RUN claude plugin marketplace add anthropics/claude-plugins-official \
 
 ENV CLAUDE_CLI_PATH=/usr/local/bin/claude
 
+COPY profiles /opt/box/profiles
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

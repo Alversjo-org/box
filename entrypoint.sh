@@ -12,8 +12,19 @@ for var in FLY_API_TOKEN GH_TOKEN CLAUDE_CODE_OAUTH_TOKEN; do
   fi
 done
 
-git config --global user.name "Alversjö Admin Box"
-git config --global user.email "admin-box@users.noreply.github.com"
+# Profile selection. Unknown values fall back to the least privileged profile.
+case "${BOX_PROFILE:-}" in
+  admin|contributor) ;;
+  "") log "WARNING: BOX_PROFILE is not set — defaulting to contributor"; BOX_PROFILE=contributor ;;
+  *)  log "WARNING: unknown BOX_PROFILE '${BOX_PROFILE}' — defaulting to contributor"; BOX_PROFILE=contributor ;;
+esac
+export BOX_PROFILE
+mkdir -p /work
+cp "/opt/box/profiles/${BOX_PROFILE}/CLAUDE.md" /work/CLAUDE.md
+log "profile: ${BOX_PROFILE}"
+
+git config --global user.name "Alversjö Box (${BOX_PROFILE})"
+git config --global user.email "box-${BOX_PROFILE}@users.noreply.github.com"
 git config --global init.defaultBranch main
 
 if [[ -n "${GH_TOKEN:-}" ]]; then
