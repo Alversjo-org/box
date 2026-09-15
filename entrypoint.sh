@@ -33,13 +33,13 @@ fi
 
 # /work is a Fly volume: the clone survives deploys, so only clone when absent.
 mkdir -p /work
-if [[ ! -d /work/admin-box/.git ]]; then
-  if git clone https://github.com/alversjo-org/admin-box.git /work/admin-box; then
-    log "cloned alversjo-org/admin-box into /work/admin-box"
+if [[ ! -d /work/box/.git ]]; then
+  if git clone https://github.com/Alversjo-org/box.git /work/box; then
+    log "cloned Alversjo-org/box into /work/box"
   else
-    log "WARNING: could not clone alversjo-org/admin-box"
+    log "WARNING: could not clone Alversjo-org/box"
   fi
 fi
 
-log "admin box up — connect with: fly ssh console -a alversjo-admin-box"
+log "box up — fallback shell: fly ssh console -a alversjo-boxes -s"
 exec sleep infinity
