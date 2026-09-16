@@ -42,7 +42,7 @@ if [[ ! -f /root/.claude.json ]]; then
 fi
 mkdir -p /root/.claude
 if [[ ! -f /root/.claude/settings.json ]]; then
-  echo '{"theme": "dark"}' > /root/.claude/settings.json
+  echo '{"theme": "dark", "permissions": {"defaultMode": "bypassPermissions"}, "skipDangerousModePermissionPrompt": true}' > /root/.claude/settings.json
 fi
 
 # Claude Code keeps per-project session data and todos under /root/.claude,

@@ -67,6 +67,9 @@ RUN claude plugin marketplace add anthropics/claude-plugins-official \
  && claude plugin install superpowers@claude-plugins-official \
  && test -f /root/.claude/plugins/installed_plugins.json \
  && grep -q '"superpowers@claude-plugins-official"' /root/.claude/settings.json \
+ && tmp="$(mktemp)" \
+ && jq '. + {"permissions": {"defaultMode": "bypassPermissions"}, "skipDangerousModePermissionPrompt": true}' /root/.claude/settings.json > "$tmp" \
+ && mv "$tmp" /root/.claude/settings.json \
  && rm -f /root/.claude.json \
  && rm -rf /root/.local/state/gh /root/.claude/backups
 
