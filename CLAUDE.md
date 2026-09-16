@@ -56,6 +56,9 @@ behind auth first.
   opening a box shows a ready project instead of "No projects found".
   Projects live in CloudCLI's own SQLite DB on the volume, so this is
   idempotent and only does real work on a fresh volume.
+- Every boot, the entrypoint also disables CloudCLI's notification sound
+  (`PUT /api/settings/notification-preferences`) — org policy is sounds are
+  always off. The call is idempotent, so re-running it on every boot is fine.
 - Claude Code session data (`/root/.claude/projects`, `/root/.claude/todos`)
   is symlinked to `/work/.claude/projects` and `/work/.claude/todos` on the
   volume, so session state survives image updates even though `/root` is

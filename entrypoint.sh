@@ -166,11 +166,53 @@ seed_cloudcli_project() {
   log "WARNING: could not seed CloudCLI project /work"
 }
 
+disable_cloudcli_sound() {
+  # Org policy: notification sounds are always off. PUT is idempotent, so
+  # running this every boot is harmless.
+  local status
+  for _ in $(seq 1 60); do
+    status=$(curl -fsS http://localhost:8080/api/auth/status 2>/dev/null || true)
+    [[ "$status" == *'"needsSetup":false'* ]] && break
+    sleep 1
+  done
+  if [[ "$status" != *'"needsSetup":false'* ]]; then
+    log "WARNING: CloudCLI never finished setup — skipping sound preference"
+    return
+  fi
+  if [[ -z "${JWT_SECRET:-}" ]]; then
+    log "WARNING: JWT_SECRET is not set — cannot set notification preferences"
+    return
+  fi
+
+  local token
+  token=$(JWT_SECRET="$JWT_SECRET" node -e '
+    const c = require("crypto");
+    const b = s => Buffer.from(s).toString("base64url");
+    const h = b(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+    const now = Math.floor(Date.now() / 1000);
+    const p = b(JSON.stringify({ userId: 1, username: "box", iat: now, exp: now + 3600 }));
+    const s = c.createHmac("sha256", process.env.JWT_SECRET).update(h + "." + p).digest("base64url");
+    console.log(h + "." + p + "." + s);
+  ' 2>/dev/null || true)
+  if [[ -z "$token" ]]; then
+    log "WARNING: could not mint a JWT to set notification preferences"
+    return
+  fi
+
+  if curl -fsS -X PUT -H 'content-type: application/json' -H "Authorization: Bearer ${token}" \
+       -d '{"channels":{"sound":false}}' \
+       http://localhost:8080/api/settings/notification-preferences >/dev/null; then
+    log "disabled CloudCLI notification sound"
+  else
+    log "WARNING: could not disable CloudCLI notification sound"
+  fi
+}
+
 log "box up (profile ${BOX_PROFILE}) — fallback shell: fly ssh console -a alversjo-boxes -s"
 cloudcli_pid=0
 trap 'log "signal received — stopping cloudcli"; kill -TERM "$cloudcli_pid" 2>/dev/null; wait "$cloudcli_pid" 2>/dev/null; exit 0' TERM INT
 while true; do
-  ( seed_cloudcli_user; seed_cloudcli_project ) &
+  ( seed_cloudcli_user; seed_cloudcli_project; disable_cloudcli_sound ) &
   cloudcli start --port 8080 --database-path /work/.cloudcli/auth.db &
   cloudcli_pid=$!
   wait "$cloudcli_pid"
