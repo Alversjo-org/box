@@ -74,6 +74,12 @@ RUN claude plugin marketplace add anthropics/claude-plugins-official \
  && rm -rf /root/.local/state/gh /root/.claude/backups
 
 ENV CLAUDE_CLI_PATH=/usr/local/bin/claude
+# Boxes run Claude Code as root, and the CLI refuses bypassPermissions as root
+# unless it is told it runs inside a sandbox (it checks IS_SANDBOX=1 or its own
+# bubblewrap flag). Every box is its own Firecracker VM, so it is one; without
+# this every CloudCLI turn exits with "--dangerously-skip-permissions cannot be
+# used with root/sudo privileges".
+ENV IS_SANDBOX=1
 
 COPY profiles /opt/box/profiles
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
