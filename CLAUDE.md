@@ -25,6 +25,7 @@ machine env vars set by the platform at creation time:
 | `CLOUDFLARE_API_TOKEN` | yes | no | `dnscontrol` in `/work/infrastructure` |
 | `JWT_SECRET` | yes | yes | CloudCLI, minted per box by the platform |
 | `BOX_PROFILE` | `admin` | `contributor` | entrypoint profile selection |
+| `OWNER_EMAIL` | yes | yes | entrypoint's `git config --global user.email`, which CloudCLI's onboarding auto-prefills from |
 
 ## Image tags
 

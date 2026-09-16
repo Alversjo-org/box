@@ -23,8 +23,11 @@ mkdir -p /work
 cp "/opt/box/profiles/${BOX_PROFILE}/CLAUDE.md" /work/CLAUDE.md
 log "profile: ${BOX_PROFILE}"
 
-git config --global user.name "Alversjö Box (${BOX_PROFILE})"
-git config --global user.email "box-${BOX_PROFILE}@users.noreply.github.com"
+if [[ -z "${OWNER_EMAIL:-}" ]]; then
+  log "WARNING: OWNER_EMAIL is not set — git config will use a synthetic email"
+fi
+git config --global user.name "alversjo-contributor"
+git config --global user.email "${OWNER_EMAIL:-box-${BOX_PROFILE}@users.noreply.github.com}"
 git config --global init.defaultBranch main
 
 if [[ -n "${GH_TOKEN:-}" ]]; then
